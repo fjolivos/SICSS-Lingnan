@@ -1,0 +1,245 @@
+---
+title: "02 Core deductive"
+date: June 16, 2025
+instructor: Francisco Olivos
+---
+
+# Discrete Indicators
+
+Deductive approaches to computational text analysis start with predefined concepts or theoretical expectations and use them to guide the analysis of textual data. This is in contrast to inductive or exploratory methods, which aim to discover patterns without strong prior assumptions. In this session, we focus on core deductive techniques that quantify the presence or prominence of specific concepts within texts based on theoretical or substantive relevance.
+
+Before digging into automated deductive analysis, it’s useful to recall how concepts are traditionally applied to text in content analysis: through **manual coding** by human coders.
+
+```{r}
+# Create a coder-by-document matrix
+mat <- matrix(0, nrow = 3, ncol = 5)  # 3 coders rated 5 documents
+
+# Add each reviewers tagging for "cool"
+mat[, 1] <- c(1, 0, 1)
+mat[, 2] <- c(0, 0, 0)
+mat[, 3] <- c(1, 1, 1)
+mat[, 4] <- c(0, 0, 0)
+mat[, 5] <- c(1, 1, 1)
+
+# Calculate inter-rater reliability
+install.packages("irr")
+library(irr)
+
+kripp.alpha(mat, method = "nominal") # High reliability is above 0.7
+                                     # Our dinary variable cool/no cool is nominal
+
+#In a traditional approach, we will decide by the majority vote or work with the proportion of "cool."
+```
+
+We now apply a dictionary-based method to detect populist language in U.S. presidential speeches. Using a predefined list of populist terms from Bonikowski and Gidron, we tokenize the speeches, build a binary document-term matrix, and flag each speech as "populist" if it contains any of the terms. Finally, we visualize the proportion of populist speeches over time, illustrating how dictionaries can be used to create discrete indicators at scale.
+
+Recommended:
+
+Bonikowski, B., & Gidron, N. (2016). The populist style in American politics: Presidential campaign discourse, 1952–1996. *Social Forces*, *94*(4), 1593-1621.
+
+```{r}
+data("corpus_presidential", package = "text2map.corpora")
+
+#Subselect three columns of the dataset and renane for simplicity
+df_pres <- corpus_presidential |>
+  select(year, party, text)
+
+#Bonikowski & Gidron created a dictionary of populism
+unigrams <- c("bureaucrat", "loophole", "millionaire",
+              "baron", "venal", "crooked",
+              "responsive", "uncaring", "arrogant")
+
+install.packages("stringr")
+library(stringr)
+
+#Tokenize and create the document-text-matrix
+tkns <- df_pres$text |>
+  str_replace_all("[[:punct:]]+", " ") |>
+  tokens()
+
+dtm <- dfm(tkns)
+
+#Binary matrix of whether the terms occur or not
+dtm_bin <- dfm_weight(dtm, scheme = "boolean")
+
+#Identify the columns that match the dictionary (TRUE/FALSE)
+matched <- colnames(dtm_bin) %in% unigrams
+
+#Subset of columns of the DTM that only matched (TRUE)
+dtm_sub <- dtm_bin[, matched]
+
+df_pres$populist_unigram <- ifelse(rowSums(dtm_sub) > 0, 1, 0) # if greater than 0, give a 1 otherwise 0
+
+#Proportion of speaches per year that are populist
+df_plot <- df_pres |>
+  group_by(year) |>                               #by year
+  summarize(total = n(),                          #Formula
+            populist = sum(populist_unigram),
+            percent = populist / total)
+
+#Visualize
+
+df_plot |>
+  ggplot(aes(x = year, y = percent)) + 
+  geom_col() +
+  scale_y_continuous() +
+  labs(title = "Populist Speeches, 1952-1996",
+       y = "% Populist Speeches",
+       x = NULL)
+```
+
+## Let's discuss Bonikowski & Gidron (2016)
+
+"We developed the dictionary of populist terms iteratively, by first reading a random subset of speeches and identifying potentially relevant terms, then running the analysis based on those terms, and finally, finding additional terms in documents identified by the algorithm as populist. The process was repeated until we could no longer find any new relevant terms. As with any automated text-analysis method, validation is an essential step in the analysis (Grimmer and Stewart 2013). To ensure that our analysis did not include false positives, we closely read relevant excerpts of all the speeches that were classified as populist by the algorithm and manually recoded all instances of incorrect classification. This allowed us to achieve 100 percent measurement validity (with manual coding treated as the baseline)."
+
+## ChatGPT's input
+
+```{r}
+# ChatGPT prompt: We are analyzing presidential speeches in the United States 
+# and we want to use a dictionary to classify them. Give me 10 words that will 
+# idenfity a speech as populist. 
+
+#PS: I had to remove "people" because almost every speech include it.
+
+unigrams2 <- c("elite", "corrupt", "rigged",
+                  "establishment", "crooked", "bureaucrat",
+                  "loophole", "unfair", "outsider")
+
+matched2 <- colnames(dtm_bin) %in% unigrams2
+
+dtm_sub2 <- dtm_bin[, matched2]
+
+df_pres$populist_unigram2 <- ifelse(rowSums(dtm_sub2) > 0, 1, 0)
+
+df_plot2 <- df_pres |>
+  group_by(year) |>
+  summarize(total = n(),
+            populist = sum(populist_unigram2),
+            percent = populist / total)
+
+df_plot2 |>
+  ggplot(aes(x = year, y = percent)) + 
+  geom_col() +
+  scale_y_continuous() +
+  labs(title = "Populist Speeches with ChatGPT input, 1952-1996",
+       y = "% Populist Speeches",
+       x = NULL)
+
+#Do dictionaries identify the same documents?
+#Subset the populist column
+mat <- df_pres |> select(populist_unigram, populist_unigram2)
+
+#Convert into a matrix
+mat <- t(as.matrix(mat))
+
+#Inter-rater reliability
+kripp.alpha(mat, method= "nominal")
+
+#Discussion: What do you think? can ChatGPT provide valid dictionaries?
+```
+
+# Frequency Weighted Indicators
+
+While discrete indicators capture only the presence or absence of a concept, **frequency-weighted indicators** go a step further by counting how often relevant terms appear in a document. This approach gives more weight to documents that use a concept repeatedly, allowing for finer distinctions in intensity or emphasis. It’s particularly useful when analyzing speeches, articles, or other texts where repetition signals rhetorical importance.
+
+```{r}
+# Dictionary of countries
+dict<- c(
+  "Ukraine", "Soviet", "Pakistan", "Kosovo",
+  "Japan", "Israel", "Iraq", "India",
+  "Germany", "China", "Bosnia", "Afghanistan"
+)
+
+# US National Security Strategy
+data("corpus_usnss", package = "text2map.corpora")
+
+# Create DTM
+dtm <- corpus_usnss |>
+  mutate(text = tolower(text),
+         text = gsub("[[:punct:]]+", " ", text)) |>
+  dtm_builder(text, year)
+
+# Subset of columns that match the dictionary
+dtm <- dtm[, colnames(dtm) %in% tolower(dict)]
+
+# Melt our dataframe in three columns: year of the report, the terms, and times term ocurr
+dtm |>
+  dtm_melter() |>
+  ggplot(aes(x = doc_id, y = term, fill = freq)) +
+  geom_tile() +
+  labs(x = "Year", y = "Nation") +
+  theme(legend.position = "right", 
+        legend.direction = "vertical")
+```
+
+# Term Weighted Indicators
+
+Term-weighted indicators assign different weights to words based on their predefined meaning or strength. In sentiment analysis, for example, each term carries a score reflecting its emotional polarity and intensity. Using dictionaries like the **Jockers-Rinker sentiment lexicon**, we can compute an overall sentiment score for a text by averaging the weights of the matched terms. This method captures not just whether sentiment is present, but how strong and in which direction it is.
+
+```{r}
+# Jockers-Rinker sentiment dictionary (-1 negative to 1 positive)
+data("hash_sentiment_jockers_rinker", package = "lexicon")
+
+# Rename it to make it tidier
+df_jr <- hash_sentiment_jockers_rinker
+head(df_jr)
+
+# Toy example
+text <- "time to drop the really big bomb @realDonaldTrump is in the Epstein files that is the real reason they have not been made public have a nice day, djt"
+
+tkns <- strsplit(text, " ") |> unlist()
+
+# Subselect the matches
+df_jr |> filter(x %in% tkns)
+
+mean(c(0.25, -0.75, 0.50, 0.60))
+```
+
+What may be the problem of this approach?
+
+"Big" is a modifier of the negative term "bomb". `hash_valence_shifters` dictionary is important if you want to **adjust sentiment scores based on nearby modifiers** in a more sophisticated sentiment analysis model.
+
+```{r}
+# Dictionary of valence
+data("hash_valence_shifters", package = "lexicon")
+
+# Each word is assigned to a category: (1) negator, (2) amplifier, (3) de-amplifier, or (4) neutral
+hash_valence_shifters |>
+  group_by(y) |>
+  slice_head(n =1)
+```
+
+Let's use it with a dataset of fake and real news:
+
+```{r}
+# Dataset with fake and real news
+
+data("corpus_isot_fake_news2k", package = "text2map.corpora")
+
+# Numeric 1 real or 0 fake 
+df_isot <- corpus_isot_fake_news2k |> 
+  mutate(rating = ifelse(rating == "real", 1, 0)) |> 
+  rowid_to_column(var = "element_id")
+
+# Break documents into sentences get(sentences) and apply both dictionaries sentiment() 
+install.packages("sentimentr") 
+library(sentimentr) 
+df_polar <- df_isot$text |> get_sentences() |> sentiment()
+
+# Join the output to the original dataframe with the veracity 
+df_mod <-left_join(df_polar, df_isot, by = "element_id")
+
+# Effect of sentiment on fake or real rating 
+mod <- glm(rating ~ sentiment, family = binomial, data = df_mod)
+
+install.packages("broom")
+library(broom) 
+tidy(mod)
+
+# We can test the emotionality by taking the absolute value 
+df_mod <- df_mod |> mutate(emotionality = abs(sentiment))
+
+# Effect of emotionality on rating 
+mod <- glm(rating ~ emotionality, family = binomial, data = df_mod) 
+tidy(mod)
+```
