@@ -1,0 +1,97 @@
+---
+title: "Exploring Public Datasets for Your Project"
+date: June 18, 2025
+editor: Francisco Olivos
+---
+
+## Public Datasets Available Online
+
+For your group projects, we encourage you to collect or generate your own data using the tools introduced on the second day of the summer school.
+
+Alternatively, you may choose to work with an existing dataset and focus on applying or testing a specific analytical technique.
+
+One valuable resource for finding datasets is [Kaggle](https://www.kaggle.com), which hosts a wide variety of datasets. If you're interested in text analysis, you can explore datasets categorized under [Text Mining](https://www.kaggle.com/datasets?tags=13205-Text+Mining).
+
+Most Kaggle datasets are available in CSV format. For example, you can download the [Women's E-Commerce Clothing Reviews dataset](https://www.kaggle.com/datasets/nicapotato/womens-ecommerce-clothing-reviews) to your computer.
+
+Once downloaded, you can import the CSV file into R and convert it into a dataframe for analysis using the following code:
+
+```{r}
+# Read the CSV file into R as a data frame
+df <- read.csv("C:/Users/Francisco/Dropbox/SICSS-Lingnan/Workshop/Womens Clothing E-Commerce Reviews.csv")
+
+# View the first few rows
+head(df)
+
+```
+
+It is not necessary to focus exclusively on text or image analysis. You are also encouraged to explore other computational techniques, whether those introduced during the talks or new ones you wish to try. In such cases, you may choose to use an existing dataset to practice and apply an analytical method, rather than collecting your own data. The goal is to learn together through experimentation.
+
+For example, you can find datasets for social network analysis on Kaggle, such as:
+
+[The Marvel Universe Social Network](https://www.kaggle.com/datasets/csanhueza/the-marvel-universe-social-network)
+
+## Built-in and Package Datasets in R
+
+Several text analysis packages in R **include built-in corpora**. We have already worked with some of these in the text analysis workshops. If your project focuses on analytical techniques rather than data collection, you are welcome to explore and use these datasets.
+
+Once again, feel free to experiment with other techniques not covered in the course, this is a space for collaborative learning, and we can discover new methods together.
+
+text2map.corpora using in *Mapping Text* includes a few good corpora.
+
+**Install it if you have not done it so.**
+
+```{r}
+#Install text2map.corpora
+
+remotes::install_gitlab("culturalcartography/text2map.corpora")
+
+
+```
+
+Look at the available corpora:
+
+```{r}
+help(package = "text2map.corpora")
+```
+
+**Load the corpus**
+
+```{r}
+
+data("corpus_taylor_swift", package = "text2map.corpora")
+
+df_swift <- corpus_taylor_swift
+
+head(df_swift)
+```
+
+## Simple alternative: Computational literature review
+
+If you are interested in a specific research field or topic, a practical project idea is to conduct a computational literature review. This involves analyzing a collection of academic studies related to your chosen theme.
+
+A straightforward way to do this is by using **Web of Science**, which allows you to download study abstracts and associated metadata. These files can then be analyzed using text analysis techniques.
+
+If you are connected to the Lingnan University network, you can access Web of Science through the following link: [Web of Science via Lingnan University Library](https://julac-network.primo.exlibrisgroup.com/discovery/search?query=any,contains,web%20of%20science&vid=852JULAC_LUN:LINGNAN&tab=LU&search_scope=all&offest=0)
+
+For example, you can search for studies that include **"Hong Kong"** in the abstract, then export the results as an Excel file. To do this, click **Export → Excel**, and under **Record Content**, select **Full Record** before downloading.
+
+Note that you can export up to **1,000 records at a time**, so if your search yields more than that, you will need to download multiple batches and **merge them manually in Excel or programmatically in R**.
+
+Once downloaded, **you can import the `.xls` file into R** and begin your analysis:
+
+```{r}
+
+# Install the package if not already installed
+install.packages("readxl")
+
+# Load the package
+library(readxl)
+
+# Read the Excel file (automatically reads the first sheet)
+df_litrev <- read_excel("C:/Users/Francisco/Dropbox/SICSS-Lingnan/Workshop/HongKong.xls")
+
+# View the first few rows
+head(df_litrev)
+
+```
