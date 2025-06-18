@@ -25,6 +25,8 @@ head(df)
 
 ```
 
+For other formats, Google or ask chatGPT "How to import xxxx into R".
+
 It is not necessary to focus exclusively on text or image analysis. You are also encouraged to explore other computational techniques, whether those introduced during the talks or new ones you wish to try. In such cases, you may choose to use an existing dataset to practice and apply an analytical method, rather than collecting your own data. The goal is to learn together through experimentation.
 
 For example, you can find datasets for social network analysis on Kaggle, such as:
