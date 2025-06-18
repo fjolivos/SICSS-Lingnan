@@ -68,7 +68,7 @@ head(df_swift)
 
 ## Simple alternative: Computational literature review
 
-If you are interested in a specific research field or topic, a practical project idea is to conduct a computational literature review. This involves analyzing a collection of academic studies related to your chosen theme.
+If you are interested in a specific research field or topic, a practical project idea is to conduct a computational literature review. This involves analyzing a collection of academic studies related to your chosen theme.  This involves analyzing a collection of academic studies related to your chosen theme. It is a pretty simple analysis but with a huge academic potential and applicable to any topic: [Oldac & Olivos (2015)](https://bera-journals.onlinelibrary.wiley.com/doi/10.1002/rev3.70021)
 
 A straightforward way to do this is by using **Web of Science**, which allows you to download study abstracts and associated metadata. These files can then be analyzed using text analysis techniques.
 
